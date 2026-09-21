@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0,
+               viewport-fit=cover">
+
+<title>N.O.V.A. V1</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: #05070b;
+  color: white;
+  font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+}
+
+.app {
+  max-width: 650px;
+  margin: auto;
+  padding: 25px 16px;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.logo {
+  font-size: 38px;
+  font-weight: bold;
+  letter-spacing: 7px;
+}
+
+.subtitle {
+  margin-top: 8px;
+  color: #7189a3;
+  font-size: 12px;
+  letter-spacing: 3px;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px;
+  border: 1px solid #26384d;
+  border-radius: 16px;
+  background: #0a0f17;
+  margin-bottom: 15px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  background: #55e6a5;
+  border-radius: 50%;
+  box-shadow: 0 0 12px #55e6a5;
+}
+
+.panel {
+  background: #080d14;
+  border: 1px solid #1e3044;
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 15px;
+}
+
+.label {
+  color: #6e89a5;
+  font-size: 11px;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+}
+
+#answer {
+  font-size: 20px;
+  line-height: 1.5;
+}
+
+.buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+button {
+  padding: 15px;
+  border-radius: 14px;
+  border: 1px solid #29435e;
+  background: #0d1621;
+  color: white;
+  font-size: 15px;
+  font-weight: bold;
+}
+
+button:active {
+  transform: scale(0.97);
+}
+
+input {
+  width: 100%;
+  margin-top: 12px;
+  padding: 15px;
+  border-radius: 14px;
+  border: 1px solid #26384d;
+  background: #090e15;
+  color: white;
+  font-size: 16px;
+}
+
+.send {
+  width: 100%;
+  margin-top: 10px;
+}
+
+video {
+  width: 100%;
+  margin-top: 15px;
+  border-radius: 16px;
+  display: none;
+  background: black;
+}
+
+#log {
+  max-height: 150px;
+  overflow-y: auto;
+  font-family: monospace;
+  font-size: 12px;
+  color: #8fa6bd;
+}
+
+.info {
+  color: #70879d;
+  font-size: 12px;
+  line-height: 1.5;
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<header>
+  <div class="logo">N.O.V.A.</div>
+  <div class="subtitle">V1 • IPHONE</div>
+</header>
+
+<div class="status">
+  <div class="dot"></div>
+  <div id="status">
+    N.O.V.A. pronta.
+  </div>
+</div>
+
+<div class="panel">
+
+  <div class="label">
+    RESPOSTA
+  </div>
+
+  <div id="answer">
+    Olá! Eu sou a N.O.V.A. V1.
+  </div>
+
+</div>
+
+<div class="buttons">
+
+  <button onclick="ouvir()">
+    🎤 Falar
+  </button>
+
+  <button onclick="falarResposta()">
+    🔊 Falar resposta
+  </button>
+
+  <button onclick="abrirCamera()">
+    📷 Câmera
+  </button>
+
+  <button onclick="parar()">
+    ⏹ Parar
+  </button>
+
+</div>
+
+<input
+  id="entrada"
+  type="text"
+  placeholder="Digite um comando..."
+>
+
+<button
+  class="send"
+  onclick="enviarTexto()">
+  Enviar
+</button>
+
+<video
+  id="camera"
+  autoplay
+  playsinline>
+</video>
+
+<div class="panel" style="margin-top:15px">
+
+  <div class="label">
+    SISTEMA
+  </div>
+
+  <div id="log">
+    [N.O.V.A.] Sistema iniciado.
+  </div>
+
+</div>
+
+<p class="info">
+Comandos que a N.O.V.A. entende:
+"que horas são", "qual a data",
+"olá N.O.V.A.", "status",
+"abrir câmera" e "parar".
+</p>
+
+</div>
+
+<script>
+
+let reconhecimento;
+let stream = null;
+
+const resposta =
+  document.getElementById("answer");
+
+const status =
+  document.getElementById("status");
+
+const entrada =
+  document.getElementById("entrada");
+
+const camera =
+  document.getElementById("camera");
+
+const log =
+  document.getElementById("log");
+
+
+function registrar(texto) {
+
+  const linha =
+    document.createElement("div");
+
+  linha.textContent =
+    texto;
+
+  log.appendChild(linha);
+
+  log.scrollTop =
+    log.scrollHeight;
+}
+
+
+function mudarStatus(texto) {
+
+  status.textContent =
+    texto;
+
+  registrar(
+    "[N.O.V.A.] " + texto
+  );
+}
+
+
+function responder(texto) {
+
+  resposta.textContent =
+    texto;
+
+  registrar(
+    "[N.O.V.A.] " + texto
+  );
+}
+
+
+function falar(texto) {
+
+  if (!("speechSynthesis" in window)) {
+
+    mudarStatus(
+      "Voz não disponível."
+    );
+
+    return;
+  }
+
+  speechSynthesis.cancel();
+
+  const voz =
+    new SpeechSynthesisUtterance(texto);
+
+  voz.lang = "pt-BR";
+  voz.rate = 1;
+
+  speechSynthesis.speak(voz);
+}
+
+
+function falarResposta() {
+
+  falar(
+    resposta.textContent
+  );
+}
+
+
+function processar(comando) {
+
+  const texto =
+    comando.toLowerCase().trim();
+
+  if (!texto) return;
+
+  registrar(
+    "[VOCÊ] " + comando
+  );
+
+  let resultado;
+
+
+  if (
+    texto.includes("que horas") ||
+    texto.includes("hora")
+  ) {
+
+    resultado =
+      "Agora são " +
+      new Date().toLocaleTimeString(
+        "pt-BR",
+        {
+          hour: "2-digit",
+          minute: "2-digit"
+        }
+      );
+
+  }
+
+
+  else if (
+    texto.includes("data") ||
+    texto.includes("que dia")
+  ) {
+
+    resultado =
+      "Hoje é " +
+      new Date().toLocaleDateString(
+        "pt-BR",
+        {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric"
+        }
+      );
+
+  }
+
+
+  else if (
+    texto.includes("olá") ||
+    texto.includes("ola") ||
+    texto.includes("oi") ||
+    texto.includes("nova")
+  ) {
+
+    resultado =
+      "Olá! N.O.V.A. V1 online e pronta.";
+
+  }
+
+
+  else if (
+    texto.includes("status")
+  ) {
+
+    resultado =
+      "Sistemas básicos online. " +
+      "N.O.V.A. V1 funcionando.";
+
+  }
+
+
+  else if (
+    texto.includes("câmera") ||
+    texto.includes("camera")
+  ) {
+
+    abrirCamera();
+
+    resultado =
+      "Abrindo a câmera.";
+
+  }
+
+
+  else if (
+    texto.includes("parar") ||
+    texto.includes("desligar")
+  ) {
+
+    parar();
+
+    resultado =
+      "N.O.V.A. em espera.";
+
+  }
+
+
+  else {
+
+    resultado =
+      "Ainda não conheço esse comando. " +
+      "Posso informar a hora, a data, " +
+      "meu status ou abrir a câmera.";
+
+  }
+
+
+  responder(resultado);
+
+  falar(resultado);
+
+  mudarStatus("Pronta.");
+
+}
+
+
+function enviarTexto() {
+
+  processar(
+    entrada.value
+  );
+
+  entrada.value = "";
+
+}
+
+
+entrada.addEventListener(
+  "keydown",
+  function(event) {
+
+    if (event.key === "Enter") {
+
+      enviarTexto();
+
+    }
+
+  }
+);
+
+
+function ouvir() {
+
+  const SpeechRecognition =
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
+
+
+  if (!SpeechRecognition) {
+
+    responder(
+      "O reconhecimento de voz " +
+      "não está disponível neste navegador."
+    );
+
+    return;
+  }
+
+
+  if (reconhecimento) {
+
+    reconhecimento.abort();
+
+  }
+
+
+  reconhecimento =
+    new SpeechRecognition();
+
+
+  reconhecimento.lang =
+    "pt-BR";
+
+  reconhecimento.interimResults =
+    false;
+
+  reconhecimento.maxAlternatives =
+    1;
+
+
+  reconhecimento.onstart =
+    function() {
+
+      mudarStatus(
+        "Escutando..."
+      );
+
+    };
+
+
+  reconhecimento.onresult =
+    function(event) {
+
+      const texto =
+        event.results[0][0]
+          .transcript;
+
+      entrada.value =
+        texto;
+
+      processar(texto);
+
+    };
+
+
+  reconhecimento.onerror =
+    function(event) {
+
+      mudarStatus(
+        "Erro no microfone: " +
+        event.error
+      );
+
+    };
+
+
+  reconhecimento.onend =
+    function() {
+
+      mudarStatus(
+        "Pronta."
+      );
+
+    };
+
+
+  reconhecimento.start();
+
+}
+
+
+async function abrirCamera() {
+
+  if (
+    !navigator.mediaDevices ||
+    !navigator.mediaDevices.getUserMedia
+  ) {
+
+    responder(
+      "A câmera não está disponível."
+    );
+
+    return;
+  }
+
+
+  try {
+
+    if (stream) {
+
+      stream
+        .getTracks()
+        .forEach(
+          track => track.stop()
+        );
+
+    }
+
+
+    stream =
+      await navigator.mediaDevices
+        .getUserMedia({
+
+          video: {
+            facingMode: {
+              ideal: "environment"
+            }
+          },
+
+          audio: false
+
+        });
+
+
+    camera.srcObject =
+      stream;
+
+    camera.style.display =
+      "block";
+
+    mudarStatus(
+      "Câmera ativa."
+    );
+
+  }
+
+
+  catch (erro) {
+
+    responder(
+      "Não consegui acessar a câmera. " +
+      "Verifique a permissão do Safari."
+    );
+
+    mudarStatus(
+      "Câmera bloqueada."
+    );
+
+  }
+
+}
+
+
+function parar() {
+
+  if (reconhecimento) {
+
+    reconhecimento.abort();
+
+  }
+
+
+  if (stream) {
+
+    stream
+      .getTracks()
+      .forEach(
+        track => track.stop()
+      );
+
+    stream = null;
+
+  }
+
+
+  camera.srcObject = null;
+
+  camera.style.display =
+    "none";
+
+
+  if ("speechSynthesis" in window) {
+
+    speechSynthesis.cancel();
+
+  }
+
+
+  mudarStatus(
+    "Em espera."
+  );
+
+}
+
+
+registrar(
+  "[N.O.V.A.] V1 carregada."
+);
+
+</script>
+
+</body>
+</html>
