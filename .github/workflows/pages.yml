@@ -23,8 +23,7 @@ jobs:
 
       - name: Configurar Pages
         uses: actions/configure-pages@v5
-        with:
-          enablement: true
+        
 
       - name: Fazer upload do site
         uses: actions/upload-pages-artifact@v3
