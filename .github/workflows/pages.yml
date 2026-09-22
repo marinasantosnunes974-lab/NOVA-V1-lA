@@ -25,10 +25,10 @@ jobs:
       - name: Configurar Pages
         uses: actions/configure-pages@v5
 
-      - name: Fazer upload do site
-        uses: actions/upload-pages-artifact@v3
+      - name: Fazer uploud do site
+        uses: actions/configure-pages@v5
         with:
-          path: .
+          enablement: true
 
       - name: Publicar N.O.V.A.
         id: deployment
